@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>The AI Sales War Room</title>
+<style>
+  :root{ --navy:#0b1f4a; --navy-2:#0a1a3a; --blue-line:#6aa9ff; --yellow:#ffe55c; }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--navy-2);color:#fff;
+    font-family:'Inter','Segoe UI',system-ui,sans-serif;overflow:hidden;}
+  .scene{position:relative;width:100vw;height:100vh;
+    background:url('warroom-bg.png') center/cover no-repeat var(--navy);}
+  .panel{position:absolute;top:24%;left:14%;right:14%;bottom:10%;padding:0;}
+  .body{display:grid;grid-template-columns:1.05fr .95fr;gap:30px;align-items:center;height:100%;}
+  .dialog{font-style:italic;font-size:clamp(17px,1.55vw,24px);line-height:1.55;white-space:pre-wrap;
+    text-shadow:0 2px 10px rgba(0,0,0,.7);padding-left:10px;}
+  .yellow{color:var(--yellow);font-style:italic;}
+  .deadpool-wrap{position:relative;height:100%;display:flex;justify-content:center;align-items:center;}
+  .deadpool{max-height:480px;max-width:100%;
+    filter:drop-shadow(0 18px 30px rgba(0,0,0,.6));
+    opacity:0;transform:translateX(30px) scale(.96);
+    animation:dpIn .45s ease-out forwards;}
+  @keyframes dpIn{to{opacity:1;transform:translateX(0) scale(1);}}
+  .hawkeye-wrap{position:absolute;top:20px;left:30px;width:180px;
+    opacity:0;animation:fadeIn .2s .15s forwards;}
+  .hawkeye-alert{width:150px;height:auto;display:block;
+    opacity:0;transform:scale(.6) translateY(-10px);filter:blur(12px) brightness(2);
+    animation:hawkPop .55s steps(7,end) .15s forwards, hawkFlicker 3.2s 1s infinite;}
+  @keyframes hawkPop{
+    0%{opacity:0;transform:scale(.6) translateY(-10px);filter:blur(14px) brightness(2.4);}
+    25%{opacity:.5;filter:blur(8px) brightness(2.2);}
+    50%{opacity:.2;filter:blur(5px) brightness(1.7);}
+    75%{opacity:.9;filter:blur(2px) brightness(1.3);}
+    100%{opacity:1;transform:scale(1) translateY(0);filter:blur(0) brightness(1);}
+  }
+  @keyframes hawkFlicker{0%,95%,100%{opacity:1;filter:none;}97%{opacity:.5;filter:blur(2px) hue-rotate(8deg);}99%{opacity:.4;filter:blur(2.5px);}}
+  .hawkeye-wrap::after{content:"";position:absolute;inset:0;
+    background:repeating-linear-gradient(to bottom,rgba(106,169,255,0) 0 2px,rgba(106,169,255,.10) 2px 3px);
+    mix-blend-mode:screen;pointer-events:none;border-radius:6px;}
+  .hawkeye-label{position:absolute;bottom:-20px;left:0;right:0;text-align:center;
+    font-size:11px;letter-spacing:3px;color:#9ec6ff;opacity:0;animation:fadeIn .25s .8s forwards;}
+  @keyframes fadeIn{to{opacity:1;}}
+  .btn{position:absolute;bottom:6%;left:50%;transform:translateX(-50%);
+    padding:14px 32px;background:#fff;color:#0a1a3a;border:none;border-radius:6px;
+    font-weight:800;letter-spacing:3px;cursor:pointer;opacity:0;
+    box-shadow:0 6px 20px rgba(0,0,0,.45);
+    animation:fadeIn .35s 2s forwards;display:flex;align-items:center;gap:10px;font-size:15px;}
+  .btn::before{content:"⚡";}
+  .btn:hover{transform:translateX(-50%) translateY(-1px);}
+  .caret{display:inline-block;width:9px;height:1.1em;background:#fff;vertical-align:-2px;
+    animation:blink .7s infinite;margin-left:2px;}
+  @keyframes blink{50%{background:transparent;}}
+  .start{position:fixed;inset:0;background:#000;display:flex;align-items:center;justify-content:center;z-index:100;cursor:pointer;}
+  .start button{background:#fff;color:#000;border:none;padding:18px 36px;font-size:18px;
+    letter-spacing:4px;font-weight:800;border-radius:6px;cursor:pointer;}
+</style>
+</head>
+<body>
+
+<div class="start" id="start"><button onclick="run()">▶ START</button></div>
+
+<div class="scene">
+  <div class="hawkeye-wrap">
+    <img class="hawkeye-alert" src="hawkeye.png" alt="">
+    <div class="hawkeye-label">// HAWKEYE • INCOMING</div>
+  </div>
+  <div class="panel">
+    <div class="body">
+      <div class="dialog" id="dialog"></div>
+      <div class="deadpool-wrap">
+        <img class="deadpool" src="deadpool.png" alt="Deadpool">
+      </div>
+    </div>
+  </div>
+  <button class="btn" onclick="initiate()">INITIATE RESPONSE</button>
+</div>
+
+<audio id="sfxSiren" src="siren.mp3" preload="auto"></audio>
+<audio id="sfxVO"    src="deadpool-vo.mp3" preload="auto"></audio>
+<audio id="sfxLock"  src="lockdown.mp3" preload="auto"></audio>
+
+<script>
+const html = [
+'"Uh… Hawkeye?   Tiny problem.\n\n',
+'And by tiny, I mean the <span class="yellow">East Coast</span> is basically\n',
+'playing telephone-with-two-cans-and-a-string\' tiny.\n\n',
+'All the phone lines are down, chaos is spreading\n',
+'faster than spoilers on Reddit...\n\n',
+'and yours truly — yes, the disturbingly handsome\n',
+'one in red spandex — is officially out of terrible ideas.\n\n',
+'Which is bad. Because terrible ideas are usually my whole thing."'
+].join('');
+
+const $ = id => document.getElementById(id);
+function play(id){ const a=$(id); if(a){ a.currentTime=0; a.play().catch(()=>{}); } }
+
+function typeHTML(target, source, speed, done){
+  let i=0;
+  (function step(){
+    if(i>=source.length){ target.innerHTML=source; if(done) done(); return; }
+    if(source[i]==='<'){ i=source.indexOf('>',i)+1; } else { i++; }
+    target.innerHTML=source.slice(0,i)+'<span class="caret"></span>';
+    setTimeout(step, speed);
+  })();
+}
+
+function run(){
+  $('start').style.display='none';
+  play('sfxSiren');
+  setTimeout(()=>{ play('sfxVO'); typeHTML($('dialog'), html, 30); }, 600);
+}
+
+function initiate(){
+  play('sfxLock');
+}
+</script>
+</body>
+</html>
