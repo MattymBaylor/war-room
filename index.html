@@ -5,54 +5,70 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>The AI Sales War Room</title>
 <style>
-  :root{ --navy:#0b1f4a; --navy-2:#0a1a3a; --blue-line:#6aa9ff; --yellow:#ffe55c; }
+  :root{ --navy:#0a1a3a; --yellow:#ffe55c; }
   *{box-sizing:border-box}
-  html,body{margin:0;height:100%;background:var(--navy-2);color:#fff;
+  html,body{margin:0;height:100%;background:#000;color:#fff;
     font-family:'Inter','Segoe UI',system-ui,sans-serif;overflow:hidden;}
-  .scene{position:relative;width:100vw;height:100vh;
-    background:url('warroom-bg.png') center/cover no-repeat var(--navy);}
-  .panel{position:absolute;top:24%;left:14%;right:14%;bottom:10%;padding:0;}
-  .body{display:grid;grid-template-columns:1.05fr .95fr;gap:30px;align-items:center;height:100%;}
-  .dialog{font-style:italic;font-size:clamp(17px,1.55vw,24px);line-height:1.55;white-space:pre-wrap;
-    text-shadow:0 2px 10px rgba(0,0,0,.7);padding-left:10px;}
-  .yellow{color:var(--yellow);font-style:italic;}
+  .stage{position:relative;width:100vw;height:100vh;}
+
+  .alarm{position:absolute;inset:0;background:radial-gradient(circle,rgba(255,42,42,0) 0%,rgba(255,42,42,.55) 100%);
+    opacity:0;pointer-events:none;z-index:5;}
+  .alarm.on{animation:siren .6s ease-in-out 4;}
+  @keyframes siren{0%,100%{opacity:0;}50%{opacity:1;}}
+
+  .warroom{position:absolute;inset:0;
+    background:url('warroom-bg.png') center/cover no-repeat var(--navy);
+    opacity:0;transition:opacity .4s ease;z-index:3;}
+  .warroom.show{opacity:1;z-index:4;}
+
+  .panel{position:absolute;top:14%;left:14%;right:14%;bottom:14%;}
+  .body{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center;height:100%;}
+  .dialog{font-style:italic;font-size:clamp(18px,1.7vw,26px);line-height:1.55;white-space:pre-wrap;
+    text-shadow:0 2px 12px rgba(0,0,0,.8);padding-left:10px;}
+  .yellow{color:var(--yellow);font-style:italic;font-weight:600;}
+
   .deadpool-wrap{position:relative;height:100%;display:flex;justify-content:center;align-items:center;}
-  .deadpool{max-height:480px;max-width:100%;
-    filter:drop-shadow(0 18px 30px rgba(0,0,0,.6));
-    opacity:0;transform:translateX(30px) scale(.96);
-    animation:dpIn .45s ease-out forwards;}
+  .deadpool{max-height:420px;max-width:100%;
+    filter:drop-shadow(0 22px 35px rgba(0,0,0,.7));
+    opacity:0;transform:translateX(30px) scale(.95);}
+  .deadpool.in{animation:dpIn .5s ease-out forwards;}
   @keyframes dpIn{to{opacity:1;transform:translateX(0) scale(1);}}
-  .hawkeye-wrap{position:absolute;top:20px;left:30px;width:180px;
-    opacity:0;animation:fadeIn .2s .15s forwards;}
-  .hawkeye-alert{width:150px;height:auto;display:block;
-    opacity:0;transform:scale(.6) translateY(-10px);filter:blur(12px) brightness(2);
-    animation:hawkPop .55s steps(7,end) .15s forwards, hawkFlicker 3.2s 1s infinite;}
+
+  .hawkeye-wrap{position:absolute;top:30px;left:40px;width:160px;opacity:0;
+    border:1px solid rgba(106,169,255,.4);border-radius:6px;padding:8px;
+    background:linear-gradient(180deg,rgba(10,30,80,.5),rgba(10,30,80,.15));
+    backdrop-filter:blur(2px);}
+  .hawkeye-wrap.in{animation:fadeIn .3s forwards;}
+  .hawkeye-alert{width:100%;display:block;opacity:0;filter:blur(12px);}
+  .hawkeye-alert.in{animation:hawkPop .6s steps(7,end) forwards, hawkFlicker 4s 1.5s infinite;}
   @keyframes hawkPop{
-    0%{opacity:0;transform:scale(.6) translateY(-10px);filter:blur(14px) brightness(2.4);}
-    25%{opacity:.5;filter:blur(8px) brightness(2.2);}
-    50%{opacity:.2;filter:blur(5px) brightness(1.7);}
-    75%{opacity:.9;filter:blur(2px) brightness(1.3);}
-    100%{opacity:1;transform:scale(1) translateY(0);filter:blur(0) brightness(1);}
+    0%{opacity:0;filter:blur(14px) brightness(2.4);}
+    50%{opacity:.5;filter:blur(6px) brightness(1.8);}
+    100%{opacity:1;filter:blur(0) brightness(1);}
   }
-  @keyframes hawkFlicker{0%,95%,100%{opacity:1;filter:none;}97%{opacity:.5;filter:blur(2px) hue-rotate(8deg);}99%{opacity:.4;filter:blur(2.5px);}}
+  @keyframes hawkFlicker{0%,96%,100%{opacity:1;filter:none;}98%{opacity:.5;filter:blur(2px) hue-rotate(8deg);}}
   .hawkeye-wrap::after{content:"";position:absolute;inset:0;
-    background:repeating-linear-gradient(to bottom,rgba(106,169,255,0) 0 2px,rgba(106,169,255,.10) 2px 3px);
+    background:repeating-linear-gradient(to bottom,rgba(106,169,255,0) 0 2px,rgba(106,169,255,.12) 2px 3px);
     mix-blend-mode:screen;pointer-events:none;border-radius:6px;}
-  .hawkeye-label{position:absolute;bottom:-20px;left:0;right:0;text-align:center;
-    font-size:11px;letter-spacing:3px;color:#9ec6ff;opacity:0;animation:fadeIn .25s .8s forwards;}
-  @keyframes fadeIn{to{opacity:1;}}
-  .btn{position:absolute;bottom:6%;left:50%;transform:translateX(-50%);
-    padding:14px 32px;background:#fff;color:#0a1a3a;border:none;border-radius:6px;
-    font-weight:800;letter-spacing:3px;cursor:pointer;opacity:0;
-    box-shadow:0 6px 20px rgba(0,0,0,.45);
-    animation:fadeIn .35s 2s forwards;display:flex;align-items:center;gap:10px;font-size:15px;}
+  .hawkeye-label{text-align:center;font-size:10px;letter-spacing:3px;color:#9ec6ff;margin-top:6px;
+    border-top:1px solid rgba(106,169,255,.3);padding-top:6px;}
+
+  .btn{position:absolute;bottom:7%;left:50%;transform:translateX(-50%);
+    padding:16px 38px;background:#fff;color:#0a1a3a;border:none;border-radius:6px;
+    font-weight:800;letter-spacing:3px;cursor:pointer;opacity:0;font-size:16px;
+    box-shadow:0 0 0 0 rgba(255,229,92,.6), 0 8px 24px rgba(0,0,0,.5);
+    display:flex;align-items:center;gap:10px;}
   .btn::before{content:"⚡";}
-  .btn:hover{transform:translateX(-50%) translateY(-1px);}
-  .caret{display:inline-block;width:9px;height:1.1em;background:#fff;vertical-align:-2px;
-    animation:blink .7s infinite;margin-left:2px;}
-  @keyframes blink{50%{background:transparent;}}
-  .start{position:fixed;inset:0;background:#000;display:flex;align-items:center;justify-content:center;z-index:100;cursor:pointer;}
-  .start button{background:#fff;color:#000;border:none;padding:18px 36px;font-size:18px;
+  .btn.in{animation:fadeIn .5s forwards, btnGlow 2.5s 1s ease-in-out infinite;}
+  @keyframes fadeIn{to{opacity:1;}}
+  @keyframes btnGlow{
+    0%,100%{box-shadow:0 0 0 0 rgba(255,229,92,.6), 0 8px 24px rgba(0,0,0,.5);}
+    50%{box-shadow:0 0 0 12px rgba(255,229,92,0), 0 8px 28px rgba(0,0,0,.55);}
+  }
+  .btn:hover{transform:translateX(-50%) translateY(-2px);}
+
+  .start{position:fixed;inset:0;background:#000;display:flex;align-items:center;justify-content:center;z-index:100;}
+  .start button{background:#fff;color:#000;border:none;padding:20px 40px;font-size:18px;
     letter-spacing:4px;font-weight:800;border-radius:6px;cursor:pointer;}
 </style>
 </head>
@@ -60,60 +76,78 @@
 
 <div class="start" id="start"><button onclick="run()">▶ START</button></div>
 
-<div class="scene">
-  <div class="hawkeye-wrap">
-    <img class="hawkeye-alert" src="hawkeye.png" alt="">
-    <div class="hawkeye-label">// HAWKEYE • INCOMING</div>
-  </div>
-  <div class="panel">
-    <div class="body">
-      <div class="dialog" id="dialog"></div>
-      <div class="deadpool-wrap">
-        <img class="deadpool" src="deadpool.png" alt="Deadpool">
+<div class="stage">
+  <div class="alarm" id="alarm"></div>
+
+  <div class="warroom" id="warroom">
+    <div class="hawkeye-wrap" id="hawkeyeWrap">
+      <img class="hawkeye-alert" id="hawkeyeImg" src="hawkeye.png" alt="">
+      <div class="hawkeye-label">// HAWKEYE • INCOMING</div>
+    </div>
+    <div class="panel">
+      <div class="body">
+        <div class="dialog" id="dialog"></div>
+        <div class="deadpool-wrap">
+          <img class="deadpool" id="deadpool" src="deadpool.png" alt="">
+        </div>
       </div>
     </div>
+    <button class="btn" id="btn" onclick="initiate()">INITIATE RESPONSE</button>
   </div>
-  <button class="btn" onclick="initiate()">INITIATE RESPONSE</button>
 </div>
 
 <audio id="sfxSiren" src="siren.mp3" preload="auto"></audio>
-<audio id="sfxVO"    src="deadpool-vo.mp3" preload="auto"></audio>
-<audio id="sfxLock"  src="lockdown.mp3" preload="auto"></audio>
+<audio id="sfxVO" src="deadpool-vo.mp3" preload="auto"></audio>
+<audio id="sfxLock" src="lockdown.mp3" preload="auto"></audio>
 
 <script>
-const html = [
-'"Uh… Hawkeye?   Tiny problem.\n\n',
-'And by tiny, I mean the <span class="yellow">East Coast</span> is basically\n',
-'playing telephone-with-two-cans-and-a-string\' tiny.\n\n',
-'All the phone lines are down, chaos is spreading\n',
-'faster than spoilers on Reddit...\n\n',
-'and yours truly — yes, the disturbingly handsome\n',
-'one in red spandex — is officially out of terrible ideas.\n\n',
-'Which is bad. Because terrible ideas are usually my whole thing."'
-].join('');
+const dialogHTML = '"Uh… Hawkeye? Tiny problem.\n\nAnd by tiny, I mean the <span class="yellow">East Coast</span> is basically playing telephone-with-two-cans-and-a-string\' tiny.\n\nAll the phone lines are down, chaos is spreading faster than spoilers on Reddit...\n\nand yours truly — yes, the disturbingly handsome one in red spandex — is officially out of terrible ideas.\n\nWhich is bad. Because terrible ideas are usually my whole thing."';
 
 const $ = id => document.getElementById(id);
 function play(id){ const a=$(id); if(a){ a.currentTime=0; a.play().catch(()=>{}); } }
 
-function typeHTML(target, source, speed, done){
+function typeHTML(target, source, speed){
   let i=0;
   (function step(){
-    if(i>=source.length){ target.innerHTML=source; if(done) done(); return; }
+    if(i>=source.length){ target.innerHTML=source; return; }
     if(source[i]==='<'){ i=source.indexOf('>',i)+1; } else { i++; }
-    target.innerHTML=source.slice(0,i)+'<span class="caret"></span>';
+    target.innerHTML=source.slice(0,i);
     setTimeout(step, speed);
   })();
 }
 
 function run(){
   $('start').style.display='none';
-  play('sfxSiren');
-  setTimeout(()=>{ play('sfxVO'); typeHTML($('dialog'), html, 30); }, 600);
+
+  const siren = $('sfxSiren');
+  siren.volume = 0.6;
+  siren.currentTime = 0;
+  siren.play().catch(()=>{});
+  $('alarm').classList.add('on');
+
+  setTimeout(()=>{
+    $('warroom').classList.add('show');
+    $('hawkeyeWrap').classList.add('in');
+    $('hawkeyeImg').classList.add('in');
+    setTimeout(()=>$('deadpool').classList.add('in'), 300);
+    setTimeout(()=>{
+      // Fade out siren over ~1.2s so Deadpool's voice cuts through
+      const fade = setInterval(()=>{
+        if(siren.volume > 0.06){ siren.volume = Math.max(0, siren.volume - 0.05); }
+        else { siren.volume = 0; siren.pause(); clearInterval(fade); }
+      }, 60);
+
+      const vo = $('sfxVO');
+      vo.volume = 1.0;
+      vo.currentTime = 0;
+      vo.play().catch(()=>{});
+      typeHTML($('dialog'), dialogHTML, 28);
+    }, 700);
+    setTimeout(()=>$('btn').classList.add('in'), 4500);
+  }, 1500);
 }
 
-function initiate(){
-  play('sfxLock');
-}
+function initiate(){ play('sfxLock'); }
 </script>
 </body>
 </html>
